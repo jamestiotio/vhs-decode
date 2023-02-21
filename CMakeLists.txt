@@ -156,7 +156,7 @@ endif()
 if(BUILD_PYTHON)
     find_package(Python3 3.6 REQUIRED COMPONENTS Interpreter)
 
-    set(PYTHON_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/python-build)
+    set(PYTHON_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/dist)
 
     # python setup.py install seems to behave differently if prefix
     # is supplied, requiring setting pythonpath after install.
@@ -170,23 +170,20 @@ if(BUILD_PYTHON)
         set(PYTHON_PREFIX_LINE "--prefix ${CMAKE_INSTALL_PREFIX}")
     endif()
 
-    add_custom_target(python-build ALL
-        COMMAND ${PYTHON} ./setup.py --quiet
-            build --build-base ${PYTHON_BUILD_DIR}
-        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    )
+    #add_custom_target(python-build ALL
+    #    COMMAND ${Python3_EXECUTABLE} -m build
+    #    WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+    #)
 
-    # We must run build/egg_info here to specify the directories.
     install(CODE "
         if(NOT DEFINED ENV{DESTDIR})
-            set(ENV{DESTDIR} /)
+            set(ENV{DESTDIR} \"\")
+            set(ENV{ROOT_COMMAND} \"\")
+        else()
+            set(ENV{ROOT_COMMAND} --root)
         endif()
         execute_process(
-            COMMAND ${PYTHON} ./setup.py --quiet
-                build --build-base ${PYTHON_BUILD_DIR}
-                egg_info --egg-base ${CMAKE_CURRENT_BINARY_DIR}
-                install ${PYTHON_PREFIX_LINE}
-                        --root \$ENV{DESTDIR}
+            COMMAND ${Python3_EXECUTABLE} -m pip install --upgrade ${PYTHON_PREFIX_LINE} \$ENV{ROOT_COMMAND} \$ENV{DESTDIR} ${CMAKE_CURRENT_SOURCE_DIR}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         )
     ")
